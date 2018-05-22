@@ -1,0 +1,433 @@
+# created by Philip Orlando @ Sustainable Atmopsheres Research Lab
+# PI Dr. Linda George
+# 2018-05-21
+# Match Test in lab chamber (beer fermenter) of PurpleAirSD, and DustTrak
+
+# load the necessary packages
+if (!require(pacman)) {
+  install.packages("pacman")
+  library(pacman)
+}
+
+#
+p_load(readr
+       ,ggplot2
+       ,plyr
+       ,dplyr
+       ,broom
+       ,reshape2
+       ,tidyr
+       ,stringr
+       ,magrittr
+)
+
+
+# create unanimous time resolution for all data (5 min needs clean breaks in order to work, debug later!)
+time_resolution <- "1 min"
+
+# creating a custom not-in function
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+# create read functions for each sensor type (SD vs non-SD)
+read_purpleair <- function(file_path) {
+  data <- read.csv(file_path)
+  data <- select(data, -c(X, entry_id))
+  file_name <- basename(file_path)
+  name <- gsub("\\(.*$","",file_name)
+  name <- trimws(name, which = c("right"))
+  name <- str_replace_all(name," ","_")
+  data <- data %>% 
+    group_by(created_at = cut(as.POSIXct(created_at
+                                         ,format = "%Y-%m-%d %H:%M:%S"
+                                         ,tz = "GMT"
+    )
+    ,breaks = time_resolution)) %>%
+    summarize_all(funs(mean))
+  
+  data$created_at <- as.POSIXct(data$created_at, tz = "GMT")
+  data$created_at <- format(data$created_at, tz = "US/Pacific") %>%
+    as.POSIXct(tz = "US/Pacific")
+  data$name <- name
+  return(data)
+}
+
+read_purpleairSD <- function(file_path) {
+  data <- read.csv(file_path, stringsAsFactors = FALSE)
+  data$UTCDateTime <- as.POSIXct(data$UTCDateTime
+                                 ,format = "%Y/%m/%dT%H:%M:%S"
+                                 ,tz = "GMT"
+  )
+  
+  # this is needed for later!
+  mac_address <- data$mac_address[1]
+  data <- data %>% 
+    group_by(UTCDateTime = cut(as.POSIXct(UTCDateTime
+                                          ,format = "%Y-%m-%d %H:%M:%S"
+                                          , tz = "GMT"
+    )
+    ,breaks = time_resolution)) %>%
+    summarize_all(funs(mean))
+  
+  # group by can't average a character string
+  data$mac_address <- str_replace_all(mac_address,":","_")
+  
+  ## holy time formatting batman!
+  data$UTCDateTime <- as.POSIXct(data$UTCDateTime, tz = "GMT")
+  data$UTCDateTime <- format(data$UTCDateTime, tz="US/Pacific") %>%
+    as.POSIXct(tz = "US/Pacific")
+  
+  return(data)
+}
+
+## reads in one TSI DustTrak DRX 8533 file:
+read_dtrak<-function(fpath){
+  sdate<-read.csv(fpath, header=FALSE, nrow=1, skip=7)
+  stime <-read.csv(fpath, header = FALSE, nrow=1, skip=6)  
+  startDate<-strptime(paste(sdate$V2, stime$V2), "%m/%d/%Y %H:%M:%S", tz="US/Pacific")
+  x<-read.csv(fpath, skip=37, stringsAsFactors = FALSE, header = FALSE)
+  names(x)<-c("elapsedtime","pm1","pm2.5","pm4","pm10","total","alarms","errors")
+  x$datetime<-x$elapsedtime+startDate
+  x$datetime <- as.POSIXct(x$datetime, format = "%m/%d/%Y %H:%M:%S", tz = "US/Pacific")
+  x<-x[,-c(1,7,8)]
+  x<-x[,c(6,1,2,3,4,5)]
+  x$pm1 <- x$pm1 * 1000
+  x$pm2.5 <- x$pm2.5 * 1000
+  x$pm4 <- x$pm4 * 1000
+  x$pm10 <- x$pm10 * 1000
+  x$total <- x$total * 1000
+  x <- x %>% 
+    group_by(datetime = cut(datetime, breaks = time_resolution)) %>%
+    dplyr::summarize(pm1 = mean(pm1), pm2.5 = mean(pm2.5), pm4 = mean(pm4), 
+                     pm10 = mean(pm10), total = mean(total))
+  ## manage time zones (necessary when using PurpleAir sensors!)
+  x$datetime <- as.POSIXct(x$datetime, format = "%Y-%m-%d %H:%M:%S", tz = "US/Pacific")
+  return(x)
+  
+}
+
+
+
+# setting filepaths for each sensor type
+#purpleair_path <- "./data/PurpleAir/"
+purpleairSD_path <- "./data/PurpleAirSD/"
+dtrak_path <- "./data/DustTrak/"
+
+
+# pulling in a list of files within each directory
+# purpleair_files <- list.files(path = purpleair_path, pattern = "\\.csv$",
+#                               all.files=FALSE, full.names = TRUE,
+#                               ignore.case = FALSE)
+
+
+purpleairSD_files <- list.files(path = purpleairSD_path, pattern = "\\.csv$",
+                                all.files=FALSE, full.names = TRUE,
+                                ignore.case = FALSE)
+
+dtrak_files <- list.files(path = dtrak_path, pattern = "\\.csv$",
+                          all.files=FALSE, full.names = TRUE,
+                          ignore.case = FALSE)
+
+# pulling in the DustTrak data
+dtrak <- ldply(dtrak_files, read_dtrak)
+
+
+# creating separate file lists based on primary and secondary files
+# primary_files <- grep(" Primary ", purpleair_files, value = TRUE) 
+# secondary_files <- grep(" Secondary ", purpleair_files, value = TRUE)
+# 
+# # creating separate file lists based on sensor A versus sensor B
+# primary_files_a <- grep(" B ", primary_files, value = TRUE, invert = TRUE) 
+# primary_files_b <- grep(" B ", primary_files, value = TRUE) 
+# 
+# secondary_files_a <- grep(" B ", secondary_files, value = TRUE, invert = TRUE)
+# secondary_files_b <- grep(" B ", secondary_files, value = TRUE)
+
+
+# applying our generic read function to the SD files
+purpleairSD <- ldply(purpleairSD_files, read_purpleairSD) # warning message is being handled within the new read function
+
+sd_sub <- select(purpleairSD, -c(
+                                 firmware_ver
+                                 ,hardware
+                                 ,current_temp_f
+                                 ,current_humidity
+                                 ,current_dewpoint_f
+                                 ,pressure
+                                 ,adc
+                                 ,mem
+                                 ,rssi
+                                 ,uptime
+))
+
+# convert to long format
+sd_tidy <- sd_sub %>%
+  gather(pollutant, value, -c(UTCDateTime, mac_address)) ## fix this accordingly!
+
+
+split <- str_split(sd_tidy$pollutant, pattern = "_b", simplify = TRUE)
+tail(split)
+
+# include mac_address in sensor name in future:
+sd_tidy$sensor <- ifelse(grepl("_b$", sd_tidy$pollutant), "SD_B", "SD_A")
+
+# replace mac_address with Sensor Name, or Sensor ID via lookup table in the future?
+sd_tidy$sensor_id <- ifelse(grepl("_b$", sd_tidy$pollutant), paste0(sd_tidy$mac_address, "_SD_B"), paste0(sd_tidy$mac_address, "_SD_A"))
+sd_tidy$pollutant <- split[,1] # is this doing anything?
+
+# rename date column
+colnames(sd_tidy)[colnames(sd_tidy) == "UTCDateTime"] <- "datetime"
+head(sd_tidy$datetime)
+sd_tidy <- select(sd_tidy, -c(mac_address, sensor))
+
+# match the column order of the other 
+sd_tidy <- sd_tidy %>% 
+  select(datetime, sensor_id, pollutant, value)
+
+
+# # applying our generic read functions to each list of files separately! (tricky)
+# primary_a <- ldply(primary_files_a, read_purpleair)
+# primary_b <- ldply(primary_files_b, read_purpleair)
+# 
+# secondary_a <- ldply(secondary_files_a, read_purpleair)
+# secondary_b <- ldply(secondary_files_b, read_purpleair)
+# 
+# # assign better column names for number density data
+# colnames(secondary_a) <- c("created_at"
+#                            ,"PNC0.3um.dl"
+#                            ,"PNC0.5um.dl"
+#                            ,"PNC1.0um.dl"
+#                            ,"PNC2.5um.dl"
+#                            ,"PNC5.0um.dl"
+#                            ,"PNC10.0um.dl"
+#                            ,"PM1.0_CF_1_ug.m3"
+#                            ,"PM10_CF_1_ug.m3"
+#                            ,"name")
+# 
+# colnames(secondary_b) <- c("created_at"
+#                            ,"PNC0.3um.dl"
+#                            ,"PNC0.5um.dl"
+#                            ,"PNC1.0um.dl"
+#                            ,"PNC2.5um.dl"
+#                            ,"PNC5.0um.dl"
+#                            ,"PNC10.0um.dl"
+#                            ,"PM1.0_CF_1_ug.m3"
+#                            ,"PM10_CF_1_ug.m3"
+#                            ,"name")
+# 
+# 
+# # joining primary and secondary data for each sensor (A vs B)
+# purpleair_a <- inner_join(primary_a, secondary_a, by = c("created_at", "name"))
+# purpleair_b <- inner_join(primary_b, secondary_b, by = c("created_at", "name"))
+# 
+# 
+# # creating a "sensor" vector
+# purpleair_a$sensor <- "A"
+# purpleair_b$sensor <- "B"
+# #purpleair_a$sensor_id <- paste0(purpleair$name, "_", purpleair$sensor)
+# 
+# # creating long data for our non-SD purpleair data
+# purpleair <- bind_rows(purpleair_a, purpleair_b)
+# 
+# # 'B' already included in sensor name, therefore we shouldn't be pasting it together twice!
+# purpleair$sensor_id <- ifelse(purpleair$sensor == "A", paste0(purpleair$name, "_", purpleair$sensor), purpleair$name)
+# 
+# head(purpleair$created_at)
+# 
+# 
+# # fix this, NEED sensor ID or mac_address appended as a new vector somehow!!!
+# purple_sub <- select(purpleair, -c(UptimeMinutes
+#                                    ,RSSI_dbm
+#                                    ,Temperature_F
+#                                    ,Humidity_.
+# ))
+# 
+# ## fix this to match DustTrak fields?
+# colnames(purple_sub) <- c("datetime"
+#                           ,"pm1_0_atm"
+#                           ,"pm2_5_atm"
+#                           ,"pm10_0_atm"
+#                           ,"pm2_5_cf_1"
+#                           ,"name"
+#                           ,"p_0_3_um"
+#                           ,"p_0_5_um"
+#                           ,"p_1_0_um"
+#                           ,"p_2_5_um"
+#                           ,"p_5_0_um"
+#                           ,"p_10_0_um"
+#                           ,"pm1_0_cf_1"
+#                           ,"pm10_0_cf_1"
+#                           ,"sensor"
+#                           ,"sensor_id")
+
+
+colnames(dtrak) <- c("datetime"
+                     ,"pm1_0_atm"
+                     ,"pm2_5_atm"
+                     ,"pm4_0_atm"
+                     ,"pm10_0_atm"
+                     ,"pm_total"
+)
+
+
+# # fix this, NEED sensor ID or mac_address appended as a new vector somehow!!!
+# purple_sub <- select(purple_sub, -c(sensor, name))
+
+
+# # create duplicate pm reference fields to match purpleair format
+dtrak$pm1_0_cf_1 <- dtrak$pm1_0_atm
+dtrak$pm2_5_cf_1 <- dtrak$pm2_5_atm
+dtrak$pm10_0_cf_1 <- dtrak$pm10_0_atm
+dtrak$sensor <- "DustTrak"
+dtrak$sensor_id <- "DustTrak"
+# 
+# remove non-matching fields from dusttrak data
+dtrak <- select(dtrak, -c(pm4_0_atm, pm_total, sensor))
+# 
+dtrak_tidy <- dtrak %>%
+  gather(pollutant, value, -c(datetime, sensor_id))
+# 
+# 
+# pa_tidy <- purple_sub %>%
+#   gather(pollutant, value, -c(datetime, sensor_id))
+
+
+#pm_tidy <- bind_rows(pa_tidy, sd_tidy, dtrak_tidy)
+pm_tidy <- bind_rows(sd_tidy, dtrak_tidy)
+#pm_tidy$datetime <- as.POSIXct(pm_tidy$datetime)
+
+
+write.csv(pm_tidy, paste0("./data/Tidy/", format(Sys.time(), "%Y-%m-%d"), "_pm_tidy.csv"), row.names = FALSE)
+
+dtrak_ref <- select(dtrak_tidy, c(datetime, pollutant, value))
+names(dtrak_ref) <- c("datetime", "pollutant", "DustTrak")
+head(dtrak_ref)
+
+df <- inner_join(pm_tidy, dtrak_ref, by = c("datetime", "pollutant")) %>%
+  na.omit()
+
+head(df)
+str(df)
+summary(df)
+
+head(unique(df$datetime))
+tail(unique(df$datetime))
+
+##################################### set start and end time!!! ###############################################################
+df <- df %>%
+  filter(as.POSIXct(datetime) >= as.POSIXct("2018-05-21 16:24") & as.POSIXct(datetime) <= as.POSIXct("2018-05-21 19:45"))
+############################################################### ###############################################################
+
+ggplot(df) +
+  geom_point(aes(x = datetime, y = value, colour = sensor_id)) + 
+  facet_wrap(~pollutant) +
+  geom_point(aes(x = datetime, y = DustTrak)) + 
+  theme_bw()
+
+
+# ggplot(filter(df, pollutant %!in% c("p_0_3_um", "p_0_5_um", "p_1_0_um", "p_2_5_um", "p_5_0_um", "p_10_0_um"))) +
+#   geom_jitter(aes(DustTrak, value, colour=sensor_id)) + 
+#   geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
+#   facet_wrap(~pollutant, scales="free_y")
+
+# for testing purposes:
+#sensor <- "60_1_94_58_38_9d_SD_A"
+#pollutant <- "pm1_0_cf_1"
+
+sensors <- unique(df$sensor_id)
+pollutants <- unique(df$pollutant)
+
+# ggplot(df_sensor, aes(datetime, value, color = pollutant)) + 
+#   geom_point()
+# 
+# 
+# ggplot(df_pollutant, aes(datetime, value, color = pollutant)) + 
+#   geom_point()
+
+# ggregression <- function (fit) {
+#   
+#   ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
+#     geom_point() +
+#     geom_smooth(method = "lm", col = "red", level = 0.95) + ## "lm" or "loess" fit!
+#     geom_abline(intercept = 0, slope = 1, linetype = 2, color = "firebrick") +
+#     theme_bw() + 
+#     xlab(names(fit$model)[2]) + 
+#     ylab(names(fit$model)[1]) +
+#     theme(plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+#           plot.subtitle = element_text(hjust = 0.5, size=12, face = "bold"), legend.position = "none",
+#           axis.text = element_text(size=rel(1.0), face = "bold", colour = "black"),
+#           axis.title = element_text(size=15, face = "bold")) +  
+#     labs(title = paste0(pollutant, " ", sensor, " ", names(fit$model[1]), " ~ ", names(fit$model)[2]),
+#          subtitle = paste("Adj R2 = ", signif(summary(fit)$adj.r.squared, 4),
+#                           "Intercept =",signif(fit$coef[[1]], 2), 
+#                           " Slope =",signif(fit$coef[[2]], 2), 
+#                           " P =",signif(summary(fit)$coef[2,4], 3)))
+# }
+
+
+# 
+for(sensor in unique(df$sensor_id)) {
+  
+  if (is.null(sensor)) {
+    break
+  }
+  
+  df_sensor <- subset(df, sensor_id == sensor)
+  
+  for(species in unique(df_sensor$pollutant)) {
+    
+    if (is.null(species)) {
+      break
+    }
+    
+    # change this as needed!
+    upper_limit <- 150 # apply conditionals for specific pm categories!
+
+    df_pollutant <- subset(df_sensor, pollutant == species)
+    df_mod <- subset(df_pollutant, DustTrak <= upper_limit)
+
+    
+    ggregression <- function (fit) {
+      
+      ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
+        geom_point() +
+        geom_smooth(method = "lm", col = "red", level = 0.95) + ## "lm" or "loess" fit!
+        geom_abline(intercept = 0, slope = 1, linetype = 2, color = "firebrick") +
+        theme_bw() + 
+        xlab(names(fit$model)[2]) + 
+        #ylab(expression(df_mod$pollutant~mu*g*m^-3)) +
+        #ylab(as.character(unique(df_mod$pollutant))) + 
+        #ylab(expression(paste(as.character(unique(df_mod$pollutant)), ~mu*g*m^-3))) + 
+        ylab(substitute(paste(foo, " ", mu, "", g, "", m^-3), list(foo = species))) + 
+        theme(plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+              plot.subtitle = element_text(hjust = 0.5, size=12, face = "bold"), legend.position = "none",
+              axis.text = element_text(size=rel(1.0), face = "bold", colour = "black"),
+              axis.title = element_text(size=15, face = "bold")) +  
+        labs(title = paste0(sensor, " & ", names(fit$model)[2]),
+             subtitle = paste("Adj R2 = ", signif(summary(fit)$adj.r.squared, 4),
+                              "Intercept =",signif(fit$coef[[1]], 2), 
+                              " Slope =",signif(fit$coef[[2]], 2), 
+                              " P =",signif(summary(fit)$coef[2,4], 3)))
+    }
+    
+    
+    mod <- ggregression(lm(value~DustTrak, data = df_mod))
+    plot(mod)
+    print(paste("Saving plot for", sensor, pollutant))
+    Sys.sleep(1) # catch a glimpse of each plot
+  
+    # ggsave is really slow at this DPI
+    ggsave(filename = paste0("./figures/", format(Sys.time(), "%Y-%m-%d"), "_", sensor, "_", species, "_UDL", upper_limit, ".png"),
+           plot = mod,
+           scale = 1,
+           width = 16,
+           height = 10,
+           units = "in",
+           dpi = 600)
+    Sys.sleep(1) # is R tripping over itself?
+
+    
+    
+  }
+  
+}
+
