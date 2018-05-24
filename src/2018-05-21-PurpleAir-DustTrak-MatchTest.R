@@ -9,7 +9,7 @@ if (!require(pacman)) {
   library(pacman)
 }
 
-#
+# load necessary packages
 p_load(readr
        ,ggplot2
        ,plyr
@@ -329,9 +329,7 @@ ggplot(df) +
 #   geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
 #   facet_wrap(~pollutant, scales="free_y")
 
-# for testing purposes:
-#sensor <- "60_1_94_58_38_9d_SD_A"
-#pollutant <- "pm1_0_cf_1"
+
 
 sensors <- unique(df$sensor_id)
 pollutants <- unique(df$pollutant)
@@ -364,6 +362,10 @@ pollutants <- unique(df$pollutant)
 # }
 
 
+# for testing purposes:
+sensor <- "60_1_94_58_38_9d_SD_A"
+pollutant <- "pm1_0_cf_1"
+
 # 
 for(sensor in unique(df$sensor_id)) {
   
@@ -381,9 +383,10 @@ for(sensor in unique(df$sensor_id)) {
     
     # change this as needed!
     upper_limit <- 150 # apply conditionals for specific pm categories!
-
+    lower_limit <- 0 # omit negative values
+    
     df_pollutant <- subset(df_sensor, pollutant == species)
-    df_mod <- subset(df_pollutant, DustTrak <= upper_limit)
+    df_mod <- subset(df_pollutant, DustTrak <= upper_limit & DustTrak >= lower_limit)
 
     
     ggregression <- function (fit) {
@@ -412,7 +415,7 @@ for(sensor in unique(df$sensor_id)) {
     
     mod <- ggregression(lm(value~DustTrak, data = df_mod))
     plot(mod)
-    print(paste("Saving plot for", sensor, pollutant))
+    print(paste("Saving plot for", sensor, species))
     Sys.sleep(1) # catch a glimpse of each plot
   
     # ggsave is really slow at this DPI
