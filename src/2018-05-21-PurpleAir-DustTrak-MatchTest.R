@@ -318,11 +318,16 @@ df <- df %>%
 ############################################################### ###############################################################
 
 ggplot(df) +
-  geom_point(aes(x = datetime, y = value, colour = sensor_id)) + 
+  geom_point(aes(x = datetime, y = value, colour = sensor_id), alpha = 0.1) + 
   facet_wrap(~pollutant) +
-  geom_point(aes(x = datetime, y = DustTrak)) + 
+  #geom_point(aes(x = datetime, y = DustTrak), alpha = 0.1) + 
   theme_bw()
 
+ggplot(filter(df, sensor_id == "ec_fa_bc_b_b1_9d_SD_A")) +
+  geom_point(aes(x = datetime, y = value, colour = sensor_id), alpha = 0.1) + 
+  facet_wrap(~pollutant) +
+  #geom_point(aes(x = datetime, y = DustTrak), alpha = 0.1) + 
+  theme_bw()
 
 # ggplot(filter(df, pollutant %!in% c("p_0_3_um", "p_0_5_um", "p_1_0_um", "p_2_5_um", "p_5_0_um", "p_10_0_um"))) +
 #   geom_jitter(aes(DustTrak, value, colour=sensor_id)) + 
