@@ -329,12 +329,17 @@ ggplot(filter(df, sensor_id == "ec_fa_bc_b_b1_9d_SD_A")) +
   #geom_point(aes(x = datetime, y = DustTrak), alpha = 0.1) + 
   theme_bw()
 
-# ggplot(filter(df, pollutant %!in% c("p_0_3_um", "p_0_5_um", "p_1_0_um", "p_2_5_um", "p_5_0_um", "p_10_0_um"))) +
-#   geom_jitter(aes(DustTrak, value, colour=sensor_id)) + 
-#   geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
-#   facet_wrap(~pollutant, scales="free_y")
+ggplot(filter(df, pollutant %!in% c("p_0_3_um", "p_0_5_um", "p_1_0_um", "p_2_5_um", "p_5_0_um", "p_10_0_um"))) +
+  geom_point(aes(DustTrak, value, colour=sensor_id)) +
+  #geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
+  facet_wrap(~pollutant, scales="free_y") + 
+  theme_bw()
 
-
+ggplot(filter(df, DustTrak < 200 & DustTrak >= 0)) +
+  geom_point(aes(DustTrak, value, colour=sensor_id)) +
+  #geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
+  facet_wrap(~pollutant, scales="free_y") + 
+  theme_bw()
 
 sensors <- unique(df$sensor_id)
 pollutants <- unique(df$pollutant)
@@ -423,15 +428,15 @@ for(sensor in unique(df$sensor_id)) {
     print(paste("Saving plot for", sensor, species))
     Sys.sleep(1) # catch a glimpse of each plot
   
-    # ggsave is really slow at this DPI
-    ggsave(filename = paste0("./figures/", format(Sys.time(), "%Y-%m-%d"), "_", sensor, "_", species, "_UDL", upper_limit, ".png"),
-           plot = mod,
-           scale = 1,
-           width = 16,
-           height = 10,
-           units = "in",
-           dpi = 600)
-    Sys.sleep(1) # is R tripping over itself?
+    # # ggsave is really slow at this DPI
+    # ggsave(filename = paste0("./figures/", format(Sys.time(), "%Y-%m-%d"), "_", sensor, "_", species, "_UDL", upper_limit, ".png"),
+    #        plot = mod,
+    #        scale = 1,
+    #        width = 16,
+    #        height = 10,
+    #        units = "in",
+    #        dpi = 600)
+    # Sys.sleep(1) # is R tripping over itself?
 
     
     
