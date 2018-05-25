@@ -19,6 +19,7 @@ p_load(readr
        ,tidyr
        ,stringr
        ,magrittr
+       ,rlang
 )
 
 
@@ -109,7 +110,8 @@ read_dtrak<-function(fpath){
 
 # setting filepaths for each sensor type
 #purpleair_path <- "./data/PurpleAir/"
-purpleairSD_path <- "./data/PurpleAirSD/"
+#purpleairSD_path <- "./data/PurpleAirSD/"
+purpleairSD_path <- "./data/AllFiles/" # for testing corrupt data with normal data
 dtrak_path <- "./data/DustTrak/"
 
 
@@ -378,7 +380,7 @@ tail(unique(df$datetime))
 
 
 # for testing purposes:
-# sensor <- "60_1_94_58_38_9d_SD_A"
+# sensor <- "68_c6_3a_8e_5b_a9_SD_A"
 # pollutant <- "pm1_0_cf_1"
 # start_time <- "2018-05-21 16:24"
 # end_time <- "2018-05-21 19:45"
@@ -433,7 +435,7 @@ for (time in 1:nrow(sample_period)) {
   test <- df %>% 
     filter(as.POSIXct(datetime) >= as.POSIXct(start_time) & as.POSIXct(datetime) <= as.POSIXct(end_time))
   
-  if (is.null(test)) {
+  if (nrow(test) <= 0) {
     break
   }
   
@@ -447,7 +449,7 @@ for (time in 1:nrow(sample_period)) {
     
     test_sensor <- subset(test, sensor_id == sensor)
     
-    if (is.null(test_sensor)) {
+    if (nrow(test_sensor) <= 0) {
       break
     }
     
@@ -465,13 +467,13 @@ for (time in 1:nrow(sample_period)) {
       
       test_pollutant <- subset(test_sensor, pollutant == species)
       
-      if (is.null(test_pollutant)) {
+      if (nrow(test_pollutant) <= 0) {
         break
       }
       
       df_mod <- subset(test_pollutant, DustTrak <= upper_limit & DustTrak >= lower_limit)
       
-      if (is.null(df_mod)) {
+      if (nrow(df_mod) <= 0) {
         break
       }
       
@@ -500,72 +502,72 @@ for (time in 1:nrow(sample_period)) {
       }
       
       
-      # capturing our regression model output and variables of interest
-      try({
-        
-        print(paste("trying", start_time, end_time, sensor, species))
-        mod <- lm(value~DustTrak, data = df_mod)
-        r_squared <- signif(summary(mod)$r.squared, 4)
-        slope <- signif(mod$coefficients[[2]], 2)
-        intercept <- signif(mod$coefficients[[1]], 2)
-        p_value <- signif(summary(mod)$coef[2,4], 3)
-        
-        new_row <- list(start_time, end_time, sensor, species, r_squared, slope, intercept, p_value)
-        
-        output_df <- rbind(output_df
-                           ,data.frame(
-                             start_time = start_time
-                             ,end_time = end_time
-                             ,sensor = sensor
-                             ,pollutant = species
-                             ,r_squared = r_squared
-                             ,slope = slope
-                             ,intercept = intercept
-                             ,p_value = p_value
-                           ))
-        
-        ## check if our output file already exists for today's date
-        txt_path <- paste0("./data/Output/", format(Sys.time(), "%Y-%m-%d"), "-PurpleAirSummaryTable.txt")
-        if(!file.exists(txt_path)) {
-          
-          
-          print(paste0("Creating file: ", basename(txt_path)))
-          write.table(output_df
-                      ,txt_path
-                      ,row.names = FALSE
-                      ,col.names = TRUE)
-          
-        } else {
-          
-          print(paste0("Appending file: ", basename(txt_path)))
-          write.table(output_df
-                      ,txt_path
-                      ,row.names = FALSE
-                      ,append = TRUE # append if already exists
-                      ,col.names = FALSE
-                      ,sep =  ",")
-          
-        }
+    # capturing our regression model output and variables of interest
+    ## try({
+      
+      print(paste("trying", start_time, end_time, sensor, species))
+      mod <- lm(value~DustTrak, data = df_mod)
+      r_squared <- signif(summary(mod)$r.squared, 4)
+      slope <- signif(mod$coefficients[[2]], 2)
+      intercept <- signif(mod$coefficients[[1]], 2)
+      p_value <- signif(summary(mod)$coef[2,4], 3)
+      
+      new_row <- list(start_time, end_time, sensor, species, r_squared, slope, intercept, p_value)
+      
+      output_df <- rbind(output_df
+                         ,data.frame(
+                           start_time = start_time
+                           ,end_time = end_time
+                           ,sensor = sensor
+                           ,pollutant = species
+                           ,r_squared = r_squared
+                           ,slope = slope
+                           ,intercept = intercept
+                           ,p_value = p_value
+                         ))
+      
+      ## check if our output file already exists for today's date
+      txt_path <- paste0("./data/Output/", format(Sys.time(), "%Y-%m-%d"), "-PurpleAirSummaryTable.txt")
+      if(!file.exists(txt_path)) {
         
         
-        # plotting our regression results
-        mod_plot <- ggregression(mod)
-        plot(mod_plot)
-        print(paste("Saving plot for", start_time, end_time, sensor, species))
-        Sys.sleep(1) # catch a glimpse of each plot
+        print(paste0("Creating file: ", basename(txt_path)))
+        write.table(output_df
+                    ,txt_path
+                    ,row.names = FALSE
+                    ,col.names = TRUE)
         
-        # # ggsave is really slow at this DPI
-        # ggsave(filename = paste0("./figures/", start_time, "-", end_time, "_",  sensor, "_", species, "_UDL", upper_limit, ".png"),
-        #        plot = mod_plot,
-        #        scale = 1,
-        #        width = 16,
-        #        height = 10,
-        #        units = "in",
-        #        dpi = 400)
-        # Sys.sleep(1) # is R tripping over itself?
+      } else {
         
+        print(paste0("Appending file: ", basename(txt_path)))
+        write.table(output_df
+                    ,txt_path
+                    ,row.names = FALSE
+                    ,append = TRUE # append if already exists
+                    ,col.names = FALSE
+                    ,sep =  ",")
         
-      })
+      }
+      
+      
+      # plotting our regression results
+      mod_plot <- ggregression(mod)
+      plot(mod_plot)
+      print(paste("Saving plot for", start_time, end_time, sensor, species))
+      Sys.sleep(1) # catch a glimpse of each plot
+      
+      # # ggsave is really slow at this DPI
+      # ggsave(filename = paste0("./figures/", start_time, "-", end_time, "_",  sensor, "_", species, "_UDL", upper_limit, ".png"),
+      #        plot = mod_plot,
+      #        scale = 1,
+      #        width = 16,
+      #        height = 10,
+      #        units = "in",
+      #        dpi = 400)
+      # Sys.sleep(1) # is R tripping over itself?
+      
+      
+    ##}) ## end of try block
 
       
     }
