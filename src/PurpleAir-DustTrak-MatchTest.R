@@ -433,6 +433,11 @@ for (time in 1:nrow(sample_period)) {
   test <- df %>% 
     filter(as.POSIXct(datetime) >= as.POSIXct(start_time) & as.POSIXct(datetime) <= as.POSIXct(end_time))
   
+  if (is.null(test)) {
+    break
+  }
+  
+  
   # iterate through each sensor 
   for(sensor in unique(df$sensor_id)) {
     
@@ -442,6 +447,10 @@ for (time in 1:nrow(sample_period)) {
     
     test_sensor <- subset(test, sensor_id == sensor)
     
+    if (is.null(test_sensor)) {
+      break
+    }
+    
     # iterate through each pollutant
     for(species in unique(df_sensor$pollutant)) {
       
@@ -449,12 +458,22 @@ for (time in 1:nrow(sample_period)) {
         break
       }
       
+      
       # change this as needed!
       upper_limit <- 150 # apply conditionals for specific pm categories!
       lower_limit <- 0 # omit negative values
       
       test_pollutant <- subset(test_sensor, pollutant == species)
+      
+      if (is.null(test_pollutant)) {
+        break
+      }
+      
       df_mod <- subset(test_pollutant, DustTrak <= upper_limit & DustTrak >= lower_limit)
+      
+      if (is.null(df_mod)) {
+        break
+      }
       
       # define our regression plotting function
       ggregression <- function (fit) {
@@ -482,65 +501,72 @@ for (time in 1:nrow(sample_period)) {
       
       
       # capturing our regression model output and variables of interest
-      mod <- lm(value~DustTrak, data = df_mod)
-      r_squared <- signif(summary(mod)$r.squared, 4)
-      slope <- signif(mod$coefficients[[2]], 2)
-      intercept <- signif(mod$coefficients[[1]], 2)
-      p_value <- signif(summary(mod)$coef[2,4], 3)
-      
-      new_row <- list(start_time, end_time, sensor, species, r_squared, slope, intercept, p_value)
-      
-      output_df <- rbind(output_df
-                         ,data.frame(
-                           start_time = start_time
-                           ,end_time = end_time
-                           ,sensor = sensor
-                           ,pollutant = species
-                           ,r_squared = r_squared
-                           ,slope = slope
-                           ,intercept = intercept
-                           ,p_value = p_value
-                         ))
-      
-      ## check if our output file already exists for today's date
-      txt_path <- paste0("./data/Output/", format(Sys.time(), "%Y-%m-%d"), "-PurpleAirSummaryTable.txt")
-      if(!file.exists(txt_path)) {
+      try({
+        
+        print(paste("trying", start_time, end_time, sensor, species))
+        mod <- lm(value~DustTrak, data = df_mod)
+        r_squared <- signif(summary(mod)$r.squared, 4)
+        slope <- signif(mod$coefficients[[2]], 2)
+        intercept <- signif(mod$coefficients[[1]], 2)
+        p_value <- signif(summary(mod)$coef[2,4], 3)
+        
+        new_row <- list(start_time, end_time, sensor, species, r_squared, slope, intercept, p_value)
+        
+        output_df <- rbind(output_df
+                           ,data.frame(
+                             start_time = start_time
+                             ,end_time = end_time
+                             ,sensor = sensor
+                             ,pollutant = species
+                             ,r_squared = r_squared
+                             ,slope = slope
+                             ,intercept = intercept
+                             ,p_value = p_value
+                           ))
+        
+        ## check if our output file already exists for today's date
+        txt_path <- paste0("./data/Output/", format(Sys.time(), "%Y-%m-%d"), "-PurpleAirSummaryTable.txt")
+        if(!file.exists(txt_path)) {
+          
+          
+          print(paste0("Creating file: ", basename(txt_path)))
+          write.table(output_df
+                      ,txt_path
+                      ,row.names = FALSE
+                      ,col.names = TRUE)
+          
+        } else {
+          
+          print(paste0("Appending file: ", basename(txt_path)))
+          write.table(output_df
+                      ,txt_path
+                      ,row.names = FALSE
+                      ,append = TRUE # append if already exists
+                      ,col.names = FALSE
+                      ,sep =  ",")
+          
+        }
+        
+        
+        # plotting our regression results
+        mod_plot <- ggregression(mod)
+        plot(mod_plot)
+        print(paste("Saving plot for", start_time, end_time, sensor, species))
+        Sys.sleep(1) # catch a glimpse of each plot
+        
+        # # ggsave is really slow at this DPI
+        # ggsave(filename = paste0("./figures/", start_time, "-", end_time, "_",  sensor, "_", species, "_UDL", upper_limit, ".png"),
+        #        plot = mod_plot,
+        #        scale = 1,
+        #        width = 16,
+        #        height = 10,
+        #        units = "in",
+        #        dpi = 400)
+        # Sys.sleep(1) # is R tripping over itself?
+        
+        
+      })
 
-
-        print(paste0("Creating file: ", basename(txt_path)))
-        write.table(output_df
-                    ,txt_path
-                    ,row.names = FALSE
-                    ,col.names = TRUE)
-
-      } else {
-
-        print(paste0("Appending file: ", basename(txt_path)))
-        write.table(output_df
-                    ,txt_path
-                    ,row.names = FALSE
-                    ,append = TRUE # append if already exists
-                    ,col.names = FALSE
-                    ,sep =  ",")
-
-      }
-      
-      
-      # plotting our regression results
-      mod_plot <- ggregression(mod)
-      plot(mod_plot)
-      print(paste("Saving plot for", start_time, end_time, sensor, species))
-      Sys.sleep(1) # catch a glimpse of each plot
-      
-      # # ggsave is really slow at this DPI
-      # ggsave(filename = paste0("./figures/", start_time, "-", end_time, "_",  sensor, "_", species, "_UDL", upper_limit, ".png"),
-      #        plot = mod_plot,
-      #        scale = 1,
-      #        width = 16,
-      #        height = 10,
-      #        units = "in",
-      #        dpi = 400)
-      # Sys.sleep(1) # is R tripping over itself?
       
     }
     
