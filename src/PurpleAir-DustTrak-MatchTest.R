@@ -315,40 +315,39 @@ head(unique(df$datetime))
 tail(unique(df$datetime))
 
 ##################################### set start and end time!!! ###############################################################
-df <- df %>%
-  filter(as.POSIXct(datetime) >= as.POSIXct("2018-05-18 16:30") & as.POSIXct(datetime) <= as.POSIXct("2018-05-18 20:30"))
+# df <- df %>%
+#   filter(as.POSIXct(datetime) >= as.POSIXct("2018-05-18 16:30") & as.POSIXct(datetime) <= as.POSIXct("2018-05-18 20:30"))
 ############################################################### ###############################################################
 
 
 ## EDA time series to determine cut points for start and end time
 
-ggplot(df) +
-  geom_point(aes(x = datetime, y = value, colour = sensor_id), alpha = 0.1) + 
-  facet_wrap(~pollutant) +
-  geom_point(aes(x = datetime, y = DustTrak), alpha = 0.1) + 
-  theme_bw()
+# ggplot(df) +
+#   geom_point(aes(x = datetime, y = value, colour = sensor_id), alpha = 0.1) + 
+#   facet_wrap(~pollutant) +
+#   geom_point(aes(x = datetime, y = DustTrak), alpha = 0.1) + 
+#   theme_bw()
+# 
+# ggplot(filter(df, sensor_id == "ec_fa_bc_b_b1_9d_SD_A")) +
+#   geom_point(aes(x = datetime, y = value, colour = sensor_id), alpha = 0.1) + 
+#   facet_wrap(~pollutant) +
+#   geom_point(aes(x = datetime, y = DustTrak), alpha = 0.1) + 
+#   theme_bw()
+# 
+# 
+# ggplot(filter(df, DustTrak < 200 & DustTrak >= 0)) +
+#   geom_point(aes(x=DustTrak, y=value, colour=sensor_id)) +
+#   #geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
+#   facet_wrap(~pollutant, scales="free_y") + 
+#   theme_bw()
+# 
+# ggplot(filter(df, pollutant %!in% c("p_0_3_um", "p_0_5_um", "p_1_0_um", "p_2_5_um", "p_5_0_um", "p_10_0_um"))) +
+#   geom_point(aes(x=DustTrak, y=value, colour=sensor_id)) +
+#   geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
+#   facet_wrap(~pollutant, scales="free_y") + 
+#   theme_bw()
 
-ggplot(filter(df, sensor_id == "ec_fa_bc_b_b1_9d_SD_A")) +
-  geom_point(aes(x = datetime, y = value, colour = sensor_id), alpha = 0.1) + 
-  facet_wrap(~pollutant) +
-  geom_point(aes(x = datetime, y = DustTrak), alpha = 0.1) + 
-  theme_bw()
 
-
-ggplot(filter(df, DustTrak < 200 & DustTrak >= 0)) +
-  geom_point(aes(x=DustTrak, y=value, colour=sensor_id)) +
-  #geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
-  facet_wrap(~pollutant, scales="free_y") + 
-  theme_bw()
-
-ggplot(filter(df, pollutant %!in% c("p_0_3_um", "p_0_5_um", "p_1_0_um", "p_2_5_um", "p_5_0_um", "p_10_0_um"))) +
-  geom_point(aes(x=DustTrak, y=value, colour=sensor_id)) +
-  geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
-  facet_wrap(~pollutant, scales="free_y") + 
-  theme_bw()
-
-sensors <- unique(df$sensor_id)
-pollutants <- unique(df$pollutant)
 
 # ggplot(df_sensor, aes(datetime, value, color = pollutant)) + 
 #   geom_point()
@@ -379,101 +378,175 @@ pollutants <- unique(df$pollutant)
 
 
 # for testing purposes:
-sensor <- "60_1_94_58_38_9d_SD_A"
-pollutant <- "pm1_0_cf_1"
-start_time <- as.POSIXct("2018-05-21 16:24")
-end_time <- as.POSIXct("2018-05-21 19:45")
+# sensor <- "60_1_94_58_38_9d_SD_A"
+# pollutant <- "pm1_0_cf_1"
+# start_time <- "2018-05-21 16:24"
+# end_time <- "2018-05-21 19:45"
 
+
+# list of start times from log books
 start_times <- c("2018-05-18 14:00"
-                 ,"2018-05-21 16:24"
-                 ,""
-                 ,""
-                 ,""
-                 ,""
-                 ,""
-                 ,""
-                 ,"")
-
+                 #,"2018-05-21 16:24"
+                 #,"2018-05-24 10:37"
+                 #,""
+                 #,""
+                 #,""
+                 #,""
+                 #,""
+                 #,""
+                 )
+# list of end times from log books
 end_times <- c("2018-05-18 19:45"
-               ,"2018-05-21 19:45"
-               ,""
-               ,""
-               ,""
-               ,""
-               ,""
-               ,""
-               ,""
-               ,"")
+               #,"2018-05-21 19:45"
+               #,"2018-05-24 16:00"
+               #,""
+               #,""
+               #,""
+               #""
+               #,""
+               #,""
+               #,""
+               )
 
+# concat start and end times into single dataframe for looping
+sample_period <- data.frame(start_times, end_times)
+
+# create output df to capture our results
+output_names <- c("start_time", "end_time", "sensor", "pollutant", "r_squared", "slope", "intercept", "p_value")
+output_df <- data.frame(matrix(ncol = length(output_names), nrow = 0))
+colnames(output_df) <- output_names
+
+# create list of sensors and pollutants to iterate through
+sensors <- unique(df$sensor_id)
+pollutants <- unique(df$pollutant)
+
+
+## filter dataframe for specific test period
+for (time in 1:nrow(sample_period)) {
   
-  df <- df %>%
-  filter(as.POSIXct(datetime) >= as.POSIXct("2018-05-21 16:24") & as.POSIXct(datetime) <= as.POSIXct("2018-05-21 19:45"))  
+  # extract start and end times from our sample_period df
+  start_time <- sample_period[time, "start_times"]
+  end_time <- sample_period[time, "end_times"]
+  #print(paste(start_time, end_time)) ## for testing
   
-# 
-for(sensor in unique(df$sensor_id)) {
+  # subset our test interval
+  test <- df %>% 
+    filter(as.POSIXct(datetime) >= as.POSIXct(start_time) & as.POSIXct(datetime) <= as.POSIXct(end_time))
   
-  if (is.null(sensor)) {
-    break
-  }
-  
-  df_sensor <- subset(df, sensor_id == sensor)
-  
-  for(species in unique(df_sensor$pollutant)) {
+  # iterate through each sensor 
+  for(sensor in unique(df$sensor_id)) {
     
-    if (is.null(species)) {
+    if (is.null(sensor)) {
       break
     }
     
-    # change this as needed!
-    upper_limit <- 150 # apply conditionals for specific pm categories!
-    lower_limit <- 0 # omit negative values
+    df_sensor <- subset(df, sensor_id == sensor)
     
-    df_pollutant <- subset(df_sensor, pollutant == species)
-    df_mod <- subset(df_pollutant, DustTrak <= upper_limit & DustTrak >= lower_limit)
-
-    
-    ggregression <- function (fit) {
+    # iterate through each pollutant
+    for(species in unique(df_sensor$pollutant)) {
       
-      ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
-        geom_point() +
-        geom_smooth(method = "lm", col = "red", level = 0.95) + ## "lm" or "loess" fit!
-        geom_abline(intercept = 0, slope = 1, linetype = 2, color = "firebrick") +
-        theme_bw() + 
-        xlab(names(fit$model)[2]) + 
-        #ylab(expression(df_mod$pollutant~mu*g*m^-3)) +
-        #ylab(as.character(unique(df_mod$pollutant))) + 
-        #ylab(expression(paste(as.character(unique(df_mod$pollutant)), ~mu*g*m^-3))) + 
-        ylab(substitute(paste(foo, " ", mu, "", g, "", m^-3), list(foo = species))) + 
-        theme(plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
-              plot.subtitle = element_text(hjust = 0.5, size=12, face = "bold"), legend.position = "none",
-              axis.text = element_text(size=rel(1.0), face = "bold", colour = "black"),
-              axis.title = element_text(size=15, face = "bold")) +  
-        labs(title = paste0(sensor, " & ", names(fit$model)[2]),
-             subtitle = paste("Adj R2 = ", signif(summary(fit)$adj.r.squared, 4),
-                              "Intercept =",signif(fit$coef[[1]], 2), 
-                              " Slope =",signif(fit$coef[[2]], 2), 
-                              " P =",signif(summary(fit)$coef[2,4], 3)))
-    }
-    
-    
-    mod <- ggregression(lm(value~DustTrak, data = df_mod))
-    plot(mod)
-    print(paste("Saving plot for", sensor, species))
-    Sys.sleep(1) # catch a glimpse of each plot
-  
-    # # ggsave is really slow at this DPI
-    # ggsave(filename = paste0("./figures/", format(Sys.time(), "%Y-%m-%d"), "_", sensor, "_", species, "_UDL", upper_limit, ".png"),
-    #        plot = mod,
-    #        scale = 1,
-    #        width = 16,
-    #        height = 10,
-    #        units = "in",
-    #        dpi = 600)
-    # Sys.sleep(1) # is R tripping over itself?
+      if (is.null(species)) {
+        break
+      }
+      
+      # change this as needed!
+      upper_limit <- 150 # apply conditionals for specific pm categories!
+      lower_limit <- 0 # omit negative values
+      
+      df_pollutant <- subset(df_sensor, pollutant == species)
+      df_mod <- subset(df_pollutant, DustTrak <= upper_limit & DustTrak >= lower_limit)
+      
+      # define our regression plotting function
+      ggregression <- function (fit) {
+        
+        ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
+          geom_point() +
+          geom_smooth(method = "lm", col = "red", level = 0.95) + ## "lm" or "loess" fit!
+          geom_abline(intercept = 0, slope = 1, linetype = 2, color = "firebrick") +
+          theme_bw() + 
+          xlab(names(fit$model)[2]) + 
+          #ylab(expression(df_mod$pollutant~mu*g*m^-3)) +
+          #ylab(as.character(unique(df_mod$pollutant))) + 
+          #ylab(expression(paste(as.character(unique(df_mod$pollutant)), ~mu*g*m^-3))) + 
+          ylab(substitute(paste(foo, " ", mu, "", g, "", m^-3), list(foo = species))) + 
+          theme(plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+                plot.subtitle = element_text(hjust = 0.5, size=12, face = "bold"), legend.position = "none",
+                axis.text = element_text(size=rel(1.0), face = "bold", colour = "black"),
+                axis.title = element_text(size=15, face = "bold")) +  
+          labs(title = paste0(sensor, " & ", names(fit$model)[2]),
+               subtitle = paste("Adj R2 = ", signif(summary(fit)$adj.r.squared, 4),
+                                "Intercept =",signif(fit$coef[[1]], 2), 
+                                " Slope =",signif(fit$coef[[2]], 2), 
+                                " P =",signif(summary(fit)$coef[2,4], 3)))
+      }
+      
+      
+      # capturing our regression model output and variables of interest
+      mod <- lm(value~DustTrak, data = df_mod)
+      r_squared <- signif(summary(mod)$r.squared, 4)
+      slope <- signif(mod$coefficients[[2]], 2)
+      intercept <- signif(mod$coefficients[[1]], 2)
+      p_value <- signif(summary(mod)$coef[2,4], 3)
+      
+      new_row <- list(start_time, end_time, sensor, species, r_squared, slope, intercept, p_value)
+      
+      output_df <- rbind(output_df
+                         ,data.frame(
+                           start_time = start_time
+                           ,end_time = end_time
+                           ,sensor = sensor
+                           ,pollutant = species
+                           ,r_squared = r_squared
+                           ,slope = slope
+                           ,intercept = intercept
+                           ,p_value = p_value
+                         ))
+      
+      ## check if our output file already exists for today's date
+      txt_path <- paste0("./data/Output/", format(Sys.time(), "%Y-%m-%d"), "-PurpleAirSummaryTable.txt")
+      if(!file.exists(txt_path)) {
 
-    
+
+        print(paste0("Creating file: ", basename(txt_path)))
+        write.table(output_df
+                    ,txt_path
+                    ,row.names = FALSE
+                    ,col.names = TRUE)
+
+      } else {
+
+        print(paste0("Appending file: ", basename(txt_path)))
+        write.table(output_df
+                    ,txt_path
+                    ,row.names = FALSE
+                    ,append = TRUE # append if already exists
+                    ,col.names = FALSE
+                    ,sep =  ",")
+
+      }
+      
+      
+      # plotting our regression results
+      mod_plot <- ggregression(mod)
+      plot(mod_plot)
+      print(paste("Saving plot for", sensor, species))
+      Sys.sleep(1) # catch a glimpse of each plot
+      
+      # # ggsave is really slow at this DPI
+      # ggsave(filename = paste0("./figures/", format(Sys.time(), "%Y-%m-%d"), "_", sensor, "_", species, "_UDL", upper_limit, ".png"),
+      #        plot = mod_plot,
+      #        scale = 1,
+      #        width = 16,
+      #        height = 10,
+      #        units = "in",
+      #        dpi = 600)
+      # Sys.sleep(1) # is R tripping over itself?
+      
+    }
     
   }
   
-}
+  
+} 
+  
 
