@@ -386,8 +386,8 @@ tail(unique(df$datetime))
 
 # list of start times from log books
 start_times <- c("2018-05-18 14:00"
-                 #,"2018-05-21 16:24"
-                 #,"2018-05-24 10:37"
+                 ,"2018-05-21 16:24"
+                 ,"2018-05-24 10:37"
                  #,""
                  #,""
                  #,""
@@ -397,8 +397,8 @@ start_times <- c("2018-05-18 14:00"
                  )
 # list of end times from log books
 end_times <- c("2018-05-18 19:45"
-               #,"2018-05-21 19:45"
-               #,"2018-05-24 16:00"
+               ,"2018-05-21 19:45"
+               ,"2018-05-24 16:00"
                #,""
                #,""
                #,""
@@ -440,7 +440,7 @@ for (time in 1:nrow(sample_period)) {
       break
     }
     
-    df_sensor <- subset(df, sensor_id == sensor)
+    test_sensor <- subset(test, sensor_id == sensor)
     
     # iterate through each pollutant
     for(species in unique(df_sensor$pollutant)) {
@@ -453,8 +453,8 @@ for (time in 1:nrow(sample_period)) {
       upper_limit <- 150 # apply conditionals for specific pm categories!
       lower_limit <- 0 # omit negative values
       
-      df_pollutant <- subset(df_sensor, pollutant == species)
-      df_mod <- subset(df_pollutant, DustTrak <= upper_limit & DustTrak >= lower_limit)
+      test_pollutant <- subset(test_sensor, pollutant == species)
+      df_mod <- subset(test_pollutant, DustTrak <= upper_limit & DustTrak >= lower_limit)
       
       # define our regression plotting function
       ggregression <- function (fit) {
@@ -539,7 +539,7 @@ for (time in 1:nrow(sample_period)) {
       #        width = 16,
       #        height = 10,
       #        units = "in",
-      #        dpi = 600)
+      #        dpi = 400)
       # Sys.sleep(1) # is R tripping over itself?
       
     }
