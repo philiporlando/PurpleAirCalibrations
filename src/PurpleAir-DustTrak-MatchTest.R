@@ -306,8 +306,7 @@ head(dtrak_ref)
 
 df <- inner_join(pm_tidy
                  ,dtrak_ref
-                 ,by = c("datetime", "pollutant")) %>%
-  na.omit()
+                 ,by = c("datetime", "pollutant"))
 
 head(df)
 str(df)
@@ -381,6 +380,7 @@ tail(unique(df$datetime))
 
 # for testing purposes:
 # sensor <- "68_c6_3a_8e_5b_a9_SD_A"
+# sensor <- "DustTrak"
 # pollutant <- "pm1_0_cf_1"
 # start_time <- "2018-05-21 16:24"
 # end_time <- "2018-05-21 19:45"
@@ -414,7 +414,18 @@ end_times <- c("2018-05-18 19:45"
 sample_period <- data.frame(start_times, end_times)
 
 # create output df to capture our results
-output_names <- c("start_time", "end_time", "sensor", "pollutant", "r_squared", "slope", "intercept", "p_value")
+output_names <- c("start_time"
+                  ,"end_time"
+                  ,"sensor"
+                  ,"pollutant"
+                  ,"n_relative"
+                  ,"n_observation"
+                  ,"r_squared"
+                  ,"slope"
+                  ,"intercept"
+                  ,"p_value"
+                  )
+
 output_df <- data.frame(matrix(ncol = length(output_names), nrow = 0))
 colnames(output_df) <- output_names
 
@@ -477,6 +488,11 @@ for (time in 1:nrow(sample_period)) {
         break
       }
       
+      # determine number of observations, and relative_n
+      n_value <- df_mod$value %>% na.omit() %>% length() 
+      n_dtrak <- df_mod$DustTrak %>% na.omit() %>% length()
+      n_relative <- n_value/n_dtrak
+      
       # define our regression plotting function
       ggregression <- function (fit) {
         
@@ -520,6 +536,8 @@ for (time in 1:nrow(sample_period)) {
                            ,end_time = end_time
                            ,sensor = sensor
                            ,pollutant = species
+                           ,n_relative = n_relative
+                           ,n_observation = n_value
                            ,r_squared = r_squared
                            ,slope = slope
                            ,intercept = intercept
