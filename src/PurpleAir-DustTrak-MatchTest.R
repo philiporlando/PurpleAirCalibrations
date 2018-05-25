@@ -461,7 +461,7 @@ for (time in 1:nrow(sample_period)) {
         
         ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
           geom_point() +
-          geom_smooth(method = "lm", col = "red", level = 0.95) + ## "lm" or "loess" fit!
+          geom_smooth(method = "lm", col = "red", level = 0.95, se = FALSE) + ## "lm" or "loess" fit!
           geom_abline(intercept = 0, slope = 1, linetype = 2, color = "firebrick") +
           theme_bw() + 
           xlab(names(fit$model)[2]) + 
@@ -529,11 +529,11 @@ for (time in 1:nrow(sample_period)) {
       # plotting our regression results
       mod_plot <- ggregression(mod)
       plot(mod_plot)
-      print(paste("Saving plot for", sensor, species))
+      print(paste("Saving plot for", start_time, end_time, sensor, species))
       Sys.sleep(1) # catch a glimpse of each plot
       
       # # ggsave is really slow at this DPI
-      # ggsave(filename = paste0("./figures/", format(Sys.time(), "%Y-%m-%d"), "_", sensor, "_", species, "_UDL", upper_limit, ".png"),
+      # ggsave(filename = paste0("./figures/", start_time, "-", end_time, "_",  sensor, "_", species, "_UDL", upper_limit, ".png"),
       #        plot = mod_plot,
       #        scale = 1,
       #        width = 16,
