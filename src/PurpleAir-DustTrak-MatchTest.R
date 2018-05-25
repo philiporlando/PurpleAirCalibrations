@@ -302,7 +302,9 @@ dtrak_ref <- select(dtrak_tidy, c(datetime, pollutant, value))
 names(dtrak_ref) <- c("datetime", "pollutant", "DustTrak")
 head(dtrak_ref)
 
-df <- inner_join(pm_tidy, dtrak_ref, by = c("datetime", "pollutant")) %>%
+df <- inner_join(pm_tidy
+                 ,dtrak_ref
+                 ,by = c("datetime", "pollutant")) %>%
   na.omit()
 
 head(df)
@@ -314,30 +316,34 @@ tail(unique(df$datetime))
 
 ##################################### set start and end time!!! ###############################################################
 df <- df %>%
-  filter(as.POSIXct(datetime) >= as.POSIXct("2018-05-21 16:24") & as.POSIXct(datetime) <= as.POSIXct("2018-05-21 19:45"))
+  filter(as.POSIXct(datetime) >= as.POSIXct("2018-05-18 16:30") & as.POSIXct(datetime) <= as.POSIXct("2018-05-18 20:30"))
 ############################################################### ###############################################################
+
+
+## EDA time series to determine cut points for start and end time
 
 ggplot(df) +
   geom_point(aes(x = datetime, y = value, colour = sensor_id), alpha = 0.1) + 
   facet_wrap(~pollutant) +
-  #geom_point(aes(x = datetime, y = DustTrak), alpha = 0.1) + 
+  geom_point(aes(x = datetime, y = DustTrak), alpha = 0.1) + 
   theme_bw()
 
 ggplot(filter(df, sensor_id == "ec_fa_bc_b_b1_9d_SD_A")) +
   geom_point(aes(x = datetime, y = value, colour = sensor_id), alpha = 0.1) + 
   facet_wrap(~pollutant) +
-  #geom_point(aes(x = datetime, y = DustTrak), alpha = 0.1) + 
+  geom_point(aes(x = datetime, y = DustTrak), alpha = 0.1) + 
   theme_bw()
 
-ggplot(filter(df, pollutant %!in% c("p_0_3_um", "p_0_5_um", "p_1_0_um", "p_2_5_um", "p_5_0_um", "p_10_0_um"))) +
+
+ggplot(filter(df, DustTrak < 200 & DustTrak >= 0)) +
   geom_point(aes(x=DustTrak, y=value, colour=sensor_id)) +
   #geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
   facet_wrap(~pollutant, scales="free_y") + 
   theme_bw()
 
-ggplot(filter(df, DustTrak < 200 & DustTrak >= 0)) +
+ggplot(filter(df, pollutant %!in% c("p_0_3_um", "p_0_5_um", "p_1_0_um", "p_2_5_um", "p_5_0_um", "p_10_0_um"))) +
   geom_point(aes(x=DustTrak, y=value, colour=sensor_id)) +
-  #geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
+  geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
   facet_wrap(~pollutant, scales="free_y") + 
   theme_bw()
 
@@ -375,7 +381,34 @@ pollutants <- unique(df$pollutant)
 # for testing purposes:
 sensor <- "60_1_94_58_38_9d_SD_A"
 pollutant <- "pm1_0_cf_1"
+start_time <- as.POSIXct("2018-05-21 16:24")
+end_time <- as.POSIXct("2018-05-21 19:45")
 
+start_times <- c("2018-05-18 14:00"
+                 ,"2018-05-21 16:24"
+                 ,""
+                 ,""
+                 ,""
+                 ,""
+                 ,""
+                 ,""
+                 ,"")
+
+end_times <- c("2018-05-18 19:45"
+               ,"2018-05-21 19:45"
+               ,""
+               ,""
+               ,""
+               ,""
+               ,""
+               ,""
+               ,""
+               ,"")
+
+  
+  df <- df %>%
+  filter(as.POSIXct(datetime) >= as.POSIXct("2018-05-21 16:24") & as.POSIXct(datetime) <= as.POSIXct("2018-05-21 19:45"))  
+  
 # 
 for(sensor in unique(df$sensor_id)) {
   
