@@ -330,13 +330,13 @@ ggplot(filter(df, sensor_id == "ec_fa_bc_b_b1_9d_SD_A")) +
   theme_bw()
 
 ggplot(filter(df, pollutant %!in% c("p_0_3_um", "p_0_5_um", "p_1_0_um", "p_2_5_um", "p_5_0_um", "p_10_0_um"))) +
-  geom_point(aes(DustTrak, value, colour=sensor_id)) +
+  geom_point(aes(x=DustTrak, y=value, colour=sensor_id)) +
   #geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
   facet_wrap(~pollutant, scales="free_y") + 
   theme_bw()
 
 ggplot(filter(df, DustTrak < 200 & DustTrak >= 0)) +
-  geom_point(aes(DustTrak, value, colour=sensor_id)) +
+  geom_point(aes(x=DustTrak, y=value, colour=sensor_id)) +
   #geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
   facet_wrap(~pollutant, scales="free_y") + 
   theme_bw()
