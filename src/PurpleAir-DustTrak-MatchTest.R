@@ -52,12 +52,16 @@ read_purpleair <- function(file_path) {
   return(data)
 }
 
+# file_path <- "./data/CorruptFiles/20180518_EC_FA_BC_B_B1_9D.csv"
 read_purpleairSD <- function(file_path) {
   data <- read.csv(file_path, stringsAsFactors = FALSE)
   data$UTCDateTime <- as.POSIXct(data$UTCDateTime
                                  ,format = "%Y/%m/%dT%H:%M:%S"
                                  ,tz = "GMT"
-  )
+  ) 
+  
+  # filter out error-logs in data (may need to update this later)
+  data <- data %>% na.omit()
   
   # this is needed for later!
   mac_address <- data$mac_address[1]
@@ -528,8 +532,10 @@ for (time in 1:nrow(sample_period)) {
       intercept <- signif(mod$coefficients[[1]], 2)
       p_value <- signif(summary(mod)$coef[2,4], 3)
       
+      # create new row for our output df
       new_row <- list(start_time, end_time, sensor, species, r_squared, slope, intercept, p_value)
       
+      # append new row to output_df 
       output_df <- rbind(output_df
                          ,data.frame(
                            start_time = start_time
