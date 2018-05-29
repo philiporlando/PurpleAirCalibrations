@@ -469,7 +469,7 @@ for (time in 1:nrow(sample_period)) {
     }
     
     # iterate through each pollutant
-    for(species in unique(df_sensor$pollutant)) {
+    for(species in unique(test_sensor$pollutant)) {
       
       if (is.null(species)) {
         break
