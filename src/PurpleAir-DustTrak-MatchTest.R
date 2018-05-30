@@ -115,7 +115,7 @@ read_dtrak<-function(fpath){
 # setting filepaths for each sensor type
 #purpleair_path <- "./data/PurpleAir/"
 #purpleairSD_path <- "./data/PurpleAirSD/"
-purpleairSD_path <- "./data/AllFiles/" # for testing corrupt data with normal data
+#purpleairSD_path <- "./data/AllFiles/" # for testing corrupt data with normal data
 dtrak_path <- "./data/DustTrak/"
 
 
@@ -393,9 +393,9 @@ tail(unique(df$datetime))
 # list of start times from log books
 start_times <- c("2018-05-18 14:00"
                  ,"2018-05-21 16:24"
-                 ,"2018-05-24 10:37"
-                 #,""
-                 #,""
+                 ,"2018-05-22 11:16"
+                 ,"2018-05-24 10:48"
+                 ,"2018-05-28 13:01"
                  #,""
                  #,""
                  #,""
@@ -404,9 +404,9 @@ start_times <- c("2018-05-18 14:00"
 # list of end times from log books
 end_times <- c("2018-05-18 19:45"
                ,"2018-05-21 19:45"
+               ,"2018-05-22 17:45"
                ,"2018-05-24 16:00"
-               #,""
-               #,""
+               ,"2018-05-28 18:00"
                #,""
                #""
                #,""
@@ -514,7 +514,7 @@ for (time in 1:nrow(sample_period)) {
                 plot.subtitle = element_text(hjust = 0.5, size=12, face = "bold"), legend.position = "none",
                 axis.text = element_text(size=rel(1.0), face = "bold", colour = "black"),
                 axis.title = element_text(size=15, face = "bold")) +  
-          labs(title = paste0(sensor, " & ", names(fit$model)[2]),
+          labs(title = paste0(sensor, " & ", names(fit$model)[2], " ", as.Date(start_time)),
                subtitle = paste("Adj R2 = ", signif(summary(fit)$adj.r.squared, 4),
                                 "Intercept =",signif(fit$coef[[1]], 2), 
                                 " Slope =",signif(fit$coef[[2]], 2), 
@@ -569,6 +569,7 @@ for (time in 1:nrow(sample_period)) {
                     ,row.names = FALSE
                     ,append = TRUE # append if already exists
                     ,col.names = FALSE
+                    ,quote = FALSE # makes reading data a challenge if TRUE...
                     ,sep =  ",")
         
       }
