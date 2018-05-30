@@ -619,5 +619,30 @@ for (time in 1:nrow(sample_period)) {
   
   
 } 
+
+# read in output table
+df <- read.csv("./data/Output/2018-05-30-PurpleAirSummaryTable.txt")
+
+# filter atm values, and strong correlations with good slopes
+df %>% 
+  filter(pollutant %in% c("pm1_0_atm", "pm2_5_atm", "pm10_0_atm")) %>%
+  filter(r_squared > 0.9) %>%
+  filter(slope <= 1.3 & slope >= 0.7) %>%
+  unique() %>% # why are there duplicate rows in my df here?
+  arrange(start_time, end_time, sensor, pollutant, desc(r_squared)) -> top
+
+# write separate files for each sensor's results
+for (id in unique(top$sensor)) {
+  
+  out <- filter(top, sensor == id)
+  out %>% arrange(start_time, sensor, pollutant, desc(r_squared), desc(slope)) -> out
+  write.csv(out
+            ,file = paste0("./data/Output/", i, ".csv")
+            ,row.names = FALSE
+            )
+  
+}
+
+
   
 
