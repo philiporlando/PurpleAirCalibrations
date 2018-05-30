@@ -418,16 +418,16 @@ end_times <- c("2018-05-18 19:45"
 sample_period <- data.frame(start_times, end_times)
 
 # create output df to capture our results
-output_names <- c("start_time"
-                  ,"end_time"
-                  ,"sensor"
-                  ,"pollutant"
-                  ,"n_relative"
-                  ,"n_observation"
-                  ,"r_squared"
-                  ,"slope"
-                  ,"intercept"
-                  ,"p_value"
+output_names <- c(start_time
+                  ,end_time
+                  ,sensor
+                  ,pollutant
+                  ,n_relative
+                  ,n_observation
+                  ,r_squared
+                  ,slope
+                  ,intercept
+                  ,p_value
                   )
 
 output_df <- data.frame(matrix(ncol = length(output_names), nrow = 0))
@@ -559,7 +559,9 @@ for (time in 1:nrow(sample_period)) {
         write.table(output_df
                     ,txt_path
                     ,row.names = FALSE
-                    ,col.names = TRUE)
+                    ,col.names = TRUE
+                    ,quote = FALSE
+                    ,sep = ",")
         
       } else {
         
@@ -580,7 +582,6 @@ for (time in 1:nrow(sample_period)) {
       plot(mod_plot)
       
       Sys.sleep(1) # catch a glimpse of each plot
-      
       
       # only save the nice looking figures
       if (r_squared >= 0.90 & slope >= 0.7 & slope <= 1.3) {
