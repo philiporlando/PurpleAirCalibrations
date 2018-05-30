@@ -586,8 +586,12 @@ for (time in 1:nrow(sample_period)) {
       if (r_squared >= 0.90 & slope >= 0.7 & slope <= 1.3) {
         
         print(paste("Saving plot for", start_time, end_time, sensor, species))
+        
+        file_name <- paste0("./figures/", start_time, "-", end_time, "_",  sensor, "_", species, "_UDL", upper_limit, ".png")
+        file_name <- str_replace_all(file_name, " ", "_")
+                            
         # ggsave is really slow at this DPI
-        ggsave(filename = paste0("./figures/", start_time, "-", end_time, "_",  sensor, "_", species, "_UDL", upper_limit, ".png"),
+        ggsave(filename = file_name,
                plot = mod_plot,
                scale = 1,
                width = 16,
