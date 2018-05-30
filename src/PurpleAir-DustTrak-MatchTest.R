@@ -629,7 +629,9 @@ df %>%
   filter(r_squared > 0.9) %>%
   filter(slope <= 1.3 & slope >= 0.7) %>%
   unique() %>% # why are there duplicate rows in my df here?
-  arrange(start_time, end_time, sensor, pollutant, desc(r_squared)) -> top
+  arrange(sensor, pollutant, desc(r_squared)) -> top
+
+write.csv(top, "./data/Output/2018-05-30-PurpleAirSummaryTableSorted.txt")
 
 # write separate files for each sensor's results
 for (id in unique(top$sensor)) {
