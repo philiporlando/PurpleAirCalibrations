@@ -581,15 +581,26 @@ for (time in 1:nrow(sample_period)) {
       print(paste("Saving plot for", start_time, end_time, sensor, species))
       Sys.sleep(1) # catch a glimpse of each plot
       
-      # # ggsave is really slow at this DPI
-      # ggsave(filename = paste0("./figures/", start_time, "-", end_time, "_",  sensor, "_", species, "_UDL", upper_limit, ".png"),
-      #        plot = mod_plot,
-      #        scale = 1,
-      #        width = 16,
-      #        height = 10,
-      #        units = "in",
-      #        dpi = 400)
-      # Sys.sleep(1) # is R tripping over itself?
+      
+      # only save the nice looking figures
+      if (r_squared >= 0.90 & slope >= 0.7 & slope <= 1.3) {
+        
+        # ggsave is really slow at this DPI
+        ggsave(filename = paste0("./figures/", start_time, "-", end_time, "_",  sensor, "_", species, "_UDL", upper_limit, ".png"),
+               plot = mod_plot,
+               scale = 1,
+               width = 16,
+               height = 10,
+               units = "in",
+               dpi = 400)
+        Sys.sleep(1) # is R tripping over itself?
+        
+        
+        
+      }
+      
+      
+
       
       
     ##}) ## end of try block
