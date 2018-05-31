@@ -115,7 +115,7 @@ read_dtrak<-function(fpath){
 
 # setting filepaths for each sensor type
 #purpleair_path <- "./data/PurpleAir/"
-#purpleairSD_path <- "./data/PurpleAirSD/"
+purpleairSD_path <- "./data/PurpleAirSD/"
 #purpleairSD_path <- "./data/AllFiles/" # for testing corrupt data with normal data
 dtrak_path <- "./data/DustTrak/"
 
@@ -397,8 +397,8 @@ start_times <- c("2018-05-18 14:00"
                  ,"2018-05-22 11:16"
                  ,"2018-05-24 10:48"
                  ,"2018-05-28 13:01"
-                 #,""
-                 #,""
+                 ,"2018-05-30 15:15"
+                 ,"2018-05-30 19:20"
                  #,""
                  #,""
                  )
@@ -408,9 +408,8 @@ end_times <- c("2018-05-18 19:45"
                ,"2018-05-22 17:45"
                ,"2018-05-24 16:00"
                ,"2018-05-28 18:00"
-               #,""
-               #""
-               #,""
+               ,"2018-05-30 19:15"
+               ,"2018-05-30 23:00"
                #,""
                #,""
                )
@@ -419,16 +418,16 @@ end_times <- c("2018-05-18 19:45"
 sample_period <- data.frame(start_times, end_times)
 
 # create output df to capture our results
-output_names <- c(start_time
-                  ,end_time
-                  ,sensor
-                  ,pollutant
-                  ,n_relative
-                  ,n_observation
-                  ,r_squared
-                  ,slope
-                  ,intercept
-                  ,p_value
+output_names <- c("start_time"
+                  ,"end_time"
+                  ,"sensor"
+                  ,"pollutant"
+                  ,"n_relative"
+                  ,"n_observation"
+                  ,"r_squared"
+                  ,"slope"
+                  ,"intercept"
+                  ,"p_value"
                   )
 
 output_df <- data.frame(matrix(ncol = length(output_names), nrow = 0))
@@ -621,17 +620,17 @@ for (time in 1:nrow(sample_period)) {
 } 
 
 # read in output table
-df <- read.csv("./data/Output/2018-05-30-PurpleAirSummaryTable.txt")
+results <- read.csv("./data/Output/2018-05-31-PurpleAirSummaryTable.txt")
 
 # filter atm values, and strong correlations with good slopes
-df %>% 
+results %>% 
   filter(pollutant %in% c("pm1_0_atm", "pm2_5_atm", "pm10_0_atm")) %>%
   filter(r_squared > 0.9) %>%
   filter(slope <= 1.3 & slope >= 0.7) %>%
   unique() %>% # why are there duplicate rows in my df here?
   arrange(sensor, pollutant, desc(r_squared)) -> top
 
-write.csv(top, "./data/Output/2018-05-30-PurpleAirSummaryTableSorted.txt")
+write.csv(top, "./data/Output/2018-05-31-PurpleAirSummaryTableSorted.txt")
 
 # write separate files for each sensor's results
 for (id in unique(top$sensor)) {
