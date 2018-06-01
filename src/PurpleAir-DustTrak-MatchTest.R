@@ -441,6 +441,15 @@ sensors <- unique(df$sensor_id)
 pollutants <- unique(df$pollutant)
 
 
+
+## remove existing output file for today if exists
+old_file <- paste0("./data/Output/", format(Sys.time(), "%Y-%m-%d"), "-PurpleAirSummaryTable.txt")
+if(file.exists(old_file)) {
+
+  print(paste0("Deleting file: ", basename(old_file)))
+  file.remove(old_file)
+} 
+
 ## filter dataframe for specific test period
 for (time in 1:nrow(sample_period)) {
   
