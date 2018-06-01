@@ -24,7 +24,7 @@ p_load(readr
 )
 
 
-# create unanimous time resolution for all data (5 min needs clean breaks in order to work, debug later!)
+# create unanimous time resolution for all data (5 min needs clean nexts in order to work, debug later!)
 time_resolution <- "1 min"
 
 # creating a custom not-in function
@@ -454,7 +454,8 @@ for (time in 1:nrow(sample_period)) {
     filter(as.POSIXct(datetime) >= as.POSIXct(start_time) & as.POSIXct(datetime) <= as.POSIXct(end_time))
   
   if (nrow(test) <= 0) {
-    break
+    print(paste("Obj. 'test' is null"))
+    next
   }
   
   
@@ -462,20 +463,23 @@ for (time in 1:nrow(sample_period)) {
   for(sensor in unique(df$sensor_id)) {
     
     if (is.null(sensor)) {
-      break
+      print(paste("Obj. 'sensor' is null", sensor))
+      next
     }
     
     test_sensor <- subset(test, sensor_id == sensor)
     
     if (nrow(test_sensor) <= 0) {
-      break
+      print(paste("Obj. 'test_sensor' is null"))
+      next
     }
     
     # iterate through each pollutant
     for(species in unique(test_sensor$pollutant)) {
       
       if (is.null(species)) {
-        break
+        print(paste("Obj. 'species' is null", species))
+        next
       }
       
       
@@ -486,13 +490,15 @@ for (time in 1:nrow(sample_period)) {
       test_pollutant <- subset(test_sensor, pollutant == species)
       
       if (nrow(test_pollutant) <= 0) {
-        break
+        print(paste("Obj. 'test_pollutant' is null"))
+        next
       }
       
       df_mod <- subset(test_pollutant, DustTrak <= upper_limit & DustTrak >= lower_limit)
       
       if (nrow(df_mod) <= 0) {
-        break
+        print(paste("Obj. 'df_mod' is null"))
+        next
       }
       
       # determine number of observations, and relative_n
@@ -629,7 +635,7 @@ for (time in 1:nrow(sample_period)) {
 results <- read.csv(txt_path)
 
 # filter atm values, and strong correlations with good slopes
-results %>% 
+results %>%
   filter(pollutant %in% c("pm1_0_atm", "pm2_5_atm", "pm10_0_atm")) %>%
   filter(r_squared > 0.9) %>%
   filter(slope <= 1.3 & slope >= 0.7) %>%
@@ -637,7 +643,7 @@ results %>%
   arrange(sensor, pollutant, desc(r_squared)) -> top
 
 sort_name <- tools::file_path_sans_ext(basename(txt_path))
-write.csv(top, paste0(dirname(txt_path), "/", sort_name, "Sorted.txt"))
+write.csv(top, paste0(dirname(txt_path), "/", sort_name, "Sorted.txt"), row.names = FALSE)
 
 # write separate files for each sensor's results
 for (id in unique(top$sensor)) {
@@ -653,4 +659,10 @@ for (id in unique(top$sensor)) {
 
 
   
+## post EDA
 
+results %>%
+  filter(pollutant %in% c("pm1_0_atm", "pm2_5_atm", "pm10_0_atm")) %>%
+  filter(as.POSIXct(start_times, format = "%Y-%m-%d") >= as.POSIXct("2018-05-30", format = "%Y-%m-%d"))
+
+top_sensors <- as.data.frame(unique(top$sensor))
