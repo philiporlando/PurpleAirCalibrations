@@ -399,8 +399,9 @@ start_times <- c("2018-05-18 14:00"
                  ,"2018-05-28 13:01"
                  ,"2018-05-30 15:15"
                  ,"2018-05-30 19:20"
-                 #,""
-                 #,""
+                 ,"2018-05-31 10:30"
+                 ,"2018-05-31 14:00"
+                 ,"2018-05-31 17:45"
                  )
 # list of end times from log books
 end_times <- c("2018-05-18 19:45"
@@ -410,7 +411,9 @@ end_times <- c("2018-05-18 19:45"
                ,"2018-05-28 18:00"
                ,"2018-05-30 19:15"
                ,"2018-05-30 23:00"
-               #,""
+               ,"2018-05-31 13:45"
+               ,"2018-05-31 17:30"
+               ,"2018-06-01 03:30"
                #,""
                )
 
@@ -506,6 +509,8 @@ for (time in 1:nrow(sample_period)) {
           geom_abline(intercept = 0, slope = 1, linetype = 2, color = "firebrick") +
           theme_bw() + 
           xlab(names(fit$model)[2]) + 
+          scale_x_continuous(limits = c(0, 150)) +
+          scale_y_continuous(limits = c(0, 150)) +
           #ylab(expression(df_mod$pollutant~mu*g*m^-3)) +
           #ylab(as.character(unique(df_mod$pollutant))) + 
           #ylab(expression(paste(as.character(unique(df_mod$pollutant)), ~mu*g*m^-3))) + 
@@ -620,7 +625,7 @@ for (time in 1:nrow(sample_period)) {
 } 
 
 # read in output table
-results <- read.csv("./data/Output/2018-05-31-PurpleAirSummaryTable.txt")
+results <- read.csv(txt_path)
 
 # filter atm values, and strong correlations with good slopes
 results %>% 
@@ -630,7 +635,8 @@ results %>%
   unique() %>% # why are there duplicate rows in my df here?
   arrange(sensor, pollutant, desc(r_squared)) -> top
 
-write.csv(top, "./data/Output/2018-05-31-PurpleAirSummaryTableSorted.txt")
+sort_name <- tools::file_path_sans_ext(basename(txt_path))
+write.csv(top, paste0(dirname(txt_path), "/", sort_name, "Sorted.txt"))
 
 # write separate files for each sensor's results
 for (id in unique(top$sensor)) {
@@ -638,7 +644,7 @@ for (id in unique(top$sensor)) {
   out <- filter(top, sensor == id)
   out %>% arrange(start_time, sensor, pollutant, desc(r_squared), desc(slope)) -> out
   write.csv(out
-            ,file = paste0("./data/Output/", i, ".csv")
+            ,file = paste0("./data/Output/", id, ".csv")
             ,row.names = FALSE
             )
   
