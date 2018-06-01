@@ -509,12 +509,13 @@ for (time in 1:nrow(sample_period)) {
           geom_abline(intercept = 0, slope = 1, linetype = 2, color = "firebrick") +
           theme_bw() + 
           xlab(names(fit$model)[2]) + 
-          scale_x_continuous(limits = c(0, 150)) +
-          scale_y_continuous(limits = c(0, 150)) +
+          scale_x_continuous(limits = c(lower_limit, upper_limit)) +
+          scale_y_continuous(limits = c(lower_limit, upper_limit)) +
           #ylab(expression(df_mod$pollutant~mu*g*m^-3)) +
           #ylab(as.character(unique(df_mod$pollutant))) + 
-          #ylab(expression(paste(as.character(unique(df_mod$pollutant)), ~mu*g*m^-3))) + 
+          xlab(expression(~DustTrak~mu*g*m^-3)) + 
           ylab(substitute(paste(foo, " ", mu, "", g, "", m^-3), list(foo = species))) + 
+          #xlab(substitute(paste(foo, " ", mu, "", g, "", m^-3), "DustTrak")) + 
           theme(plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
                 plot.subtitle = element_text(hjust = 0.5, size=12, face = "bold"), legend.position = "none",
                 axis.text = element_text(size=rel(1.0), face = "bold", colour = "black"),
