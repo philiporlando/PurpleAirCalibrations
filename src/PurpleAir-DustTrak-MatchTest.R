@@ -613,13 +613,13 @@ for (time in 1:nrow(sample_period)) {
         file_name <- str_replace_all(file_name, " ", "_")
                             
         # ggsave is really slow at this DPI
-        ggsave(filename = file_name,
+        try(ggsave(filename = file_name,
                plot = mod_plot,
                scale = 1,
                width = 16,
                height = 10,
                units = "in",
-               dpi = 400)
+               dpi = 400))
         Sys.sleep(1) # is R tripping over itself?
         
         
