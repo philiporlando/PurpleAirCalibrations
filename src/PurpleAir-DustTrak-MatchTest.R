@@ -402,6 +402,9 @@ start_times <- c("2018-05-18 14:00"
                  ,"2018-05-31 10:30"
                  ,"2018-05-31 14:00"
                  ,"2018-05-31 17:45"
+                 ,"2018-06-02 11:00"
+                 ,"2018-06-02 17:30"
+                 ,"2018-06-02 23:05"
                  )
 # list of end times from log books
 end_times <- c("2018-05-18 19:45"
@@ -414,7 +417,9 @@ end_times <- c("2018-05-18 19:45"
                ,"2018-05-31 13:45"
                ,"2018-05-31 17:30"
                ,"2018-06-01 03:30"
-               #,""
+               ,"2018-06-02 17:30"
+               ,"2018-06-02 17:50"
+               ,"2018-06-03 06:05" # check these end times for 06/02 & 06/03
                )
 
 # concat start and end times into single dataframe for looping
@@ -648,6 +653,7 @@ results %>%
   filter(pollutant %in% c("pm1_0_atm", "pm2_5_atm", "pm10_0_atm")) %>%
   filter(r_squared > 0.9) %>%
   filter(slope <= 1.3 & slope >= 0.7) %>%
+  filter(sensor != "DustTrak") %>%
   unique() %>% # why are there duplicate rows in my df here?
   arrange(sensor, pollutant, desc(r_squared)) -> top
 
@@ -667,11 +673,36 @@ for (id in unique(top$sensor)) {
 }
 
 
-  
+## group by sensor ID
+
+top %>% 
+  select(-c(start_time, end_time, n_relative)) %>%
+  group_by(sensor, pollutant) %>%
+  summarise_all(funs(mean)) %>%
+  arrange(sensor, pollutant) -> top_sensors
+
+# round before saving (for printing on 1-page)
+top_sensors$n_observation <- round(top_sensors$n_observation, digits = 2)
+top_sensors$r_squared <- round(top_sensors$r_squared, digits = 4)
+top_sensors$slope <- round(top_sensors$slope, digits = 2)
+top_sensors$intercept <- round(top_sensors$intercept, digits = 2)
+top_sensors$p_value <- round(top_sensors$p_value, digits = 4)
+
+
+
+write.csv(top_sensors, "./data/Output/top_sensors.csv", row.names = FALSE)
+
+ 
+top_unique_sensors <- as.data.frame(unique(top_sensors$sensor))
+colnames(top_unique_sensors) <- c("sensor_id")
+
+write.csv(top_unique_sensors, "./data/Output/top_unique_sensors.csv", row.names = FALSE)
+
+
 ## post EDA
 
 results %>%
   filter(pollutant %in% c("pm1_0_atm", "pm2_5_atm", "pm10_0_atm")) %>%
   filter(as.POSIXct(start_times, format = "%Y-%m-%d") >= as.POSIXct("2018-05-30", format = "%Y-%m-%d"))
 
-top_sensors <- as.data.frame(unique(top$sensor))
+
