@@ -397,7 +397,7 @@ start_times <- c("2018-05-18 14:00"
                  ,"2018-05-22 11:16"
                  ,"2018-05-24 10:48"
                  ,"2018-05-28 13:01"
-                 ,"2018-05-30 15:15"
+                 ,"2018-05-30 15:15" # check raw data for duplicates b1:9d
                  ,"2018-05-30 19:20"
                  ,"2018-05-31 10:30"
                  ,"2018-05-31 14:00"
@@ -485,6 +485,7 @@ for (time in 1:nrow(sample_period)) {
     
     if (nrow(test_sensor) <= 0) {
       print(paste("Obj. 'test_sensor' is null"))
+      # add file log for missing results, doublecheck with raw data
       next
     }
     
@@ -697,12 +698,5 @@ top_unique_sensors <- as.data.frame(unique(top_sensors$sensor))
 colnames(top_unique_sensors) <- c("sensor_id")
 
 write.csv(top_unique_sensors, "./data/Output/top_unique_sensors.csv", row.names = FALSE)
-
-
-## post EDA
-
-results %>%
-  filter(pollutant %in% c("pm1_0_atm", "pm2_5_atm", "pm10_0_atm")) %>%
-  filter(as.POSIXct(start_times, format = "%Y-%m-%d") >= as.POSIXct("2018-05-30", format = "%Y-%m-%d"))
 
 
