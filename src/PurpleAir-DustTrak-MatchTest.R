@@ -320,69 +320,6 @@ summary(df)
 head(unique(df$datetime))
 tail(unique(df$datetime))
 
-##################################### set start and end time!!! ###############################################################
-# df <- df %>%
-#   filter(as.POSIXct(datetime) >= as.POSIXct("2018-05-18 16:30") & as.POSIXct(datetime) <= as.POSIXct("2018-05-18 20:30"))
-############################################################### ###############################################################
-
-
-## EDA time series to determine cut points for start and end time
-
-# ggplot(df) +
-#   geom_point(aes(x = datetime, y = value, colour = sensor_id), alpha = 0.1) + 
-#   facet_wrap(~pollutant) +
-#   geom_point(aes(x = datetime, y = DustTrak), alpha = 0.1) + 
-#   theme_bw()
-# 
-# ggplot(filter(df, sensor_id == "ec_fa_bc_b_b1_9d_SD_A")) +
-#   geom_point(aes(x = datetime, y = value, colour = sensor_id), alpha = 0.1) + 
-#   facet_wrap(~pollutant) +
-#   geom_point(aes(x = datetime, y = DustTrak), alpha = 0.1) + 
-#   theme_bw()
-# 
-# 
-# ggplot(filter(df, DustTrak < 200 & DustTrak >= 0)) +
-#   geom_point(aes(x=DustTrak, y=value, colour=sensor_id)) +
-#   #geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
-#   facet_wrap(~pollutant, scales="free_y") + 
-#   theme_bw()
-# 
-# ggplot(filter(df, pollutant %!in% c("p_0_3_um", "p_0_5_um", "p_1_0_um", "p_2_5_um", "p_5_0_um", "p_10_0_um"))) +
-#   geom_point(aes(x=DustTrak, y=value, colour=sensor_id)) +
-#   geom_smooth(aes(DustTrak, value, colour=sensor_id), method=lm, se=FALSE) +
-#   facet_wrap(~pollutant, scales="free_y") + 
-#   theme_bw()
-
-
-
-# ggplot(df_sensor, aes(datetime, value, color = pollutant)) + 
-#   geom_point()
-# 
-# 
-# ggplot(df_pollutant, aes(datetime, value, color = pollutant)) + 
-#   geom_point()
-
-# ggregression <- function (fit) {
-#   
-#   ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) + 
-#     geom_point() +
-#     geom_smooth(method = "lm", col = "red", level = 0.95) + ## "lm" or "loess" fit!
-#     geom_abline(intercept = 0, slope = 1, linetype = 2, color = "firebrick") +
-#     theme_bw() + 
-#     xlab(names(fit$model)[2]) + 
-#     ylab(names(fit$model)[1]) +
-#     theme(plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
-#           plot.subtitle = element_text(hjust = 0.5, size=12, face = "bold"), legend.position = "none",
-#           axis.text = element_text(size=rel(1.0), face = "bold", colour = "black"),
-#           axis.title = element_text(size=15, face = "bold")) +  
-#     labs(title = paste0(pollutant, " ", sensor, " ", names(fit$model[1]), " ~ ", names(fit$model)[2]),
-#          subtitle = paste("Adj R2 = ", signif(summary(fit)$adj.r.squared, 4),
-#                           "Intercept =",signif(fit$coef[[1]], 2), 
-#                           " Slope =",signif(fit$coef[[2]], 2), 
-#                           " P =",signif(summary(fit)$coef[2,4], 3)))
-# }
-
-
 # for testing purposes:
 # sensor <- "68_c6_3a_8e_5b_a9_SD_A"
 # sensor <- "DustTrak"
