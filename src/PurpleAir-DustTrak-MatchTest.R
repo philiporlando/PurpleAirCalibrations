@@ -389,7 +389,8 @@ pollutants <- unique(df$pollutant)
 
 
 ## remove existing output file for today if exists
-old_file <- paste0("./data/Output/", format(Sys.time(), "%Y-%m-%d"), "-PurpleAirSummaryTable.txt")
+#old_file <- paste0("./data/Output/", format(Sys.time(), "%Y-%m-%d"), "-PurpleAirSummaryTable.txt")
+old_file <- paste0("./data/Output/PurpleAirSummaryTable.txt")
 
 if(file.exists(old_file)) {
   print(paste0("Deleting file: ", basename(old_file)))
@@ -520,7 +521,8 @@ for (time in 1:nrow(sample_period)) {
                          ))
       
       ## check if our output file already exists for today's date
-      txt_path <- paste0("./data/Output/", format(Sys.time(), "%Y-%m-%d"), "-PurpleAirSummaryTable.txt")
+      #txt_path <- paste0("./data/Output/", format(Sys.time(), "%Y-%m-%d"), "-PurpleAirSummaryTable.txt")
+      txt_path <- paste0("./data/Output/PurpleAirSummaryTable.txt")
       if(!file.exists(txt_path)) {
         
         
@@ -573,11 +575,7 @@ for (time in 1:nrow(sample_period)) {
         
         
       }
-      
-      
 
-      
-      
     ##}) ## end of try block
 
       
