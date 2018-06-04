@@ -397,6 +397,7 @@ if(file.exists(old_file)) {
   file.remove(old_file)
 } 
 
+
 ## filter dataframe for specific test period
 for (time in 1:nrow(sample_period)) {
   
@@ -411,6 +412,7 @@ for (time in 1:nrow(sample_period)) {
   
   if (nrow(test) <= 0) {
     print(paste("Obj. 'test' is null"))
+    write.table()
     next
   }
   
