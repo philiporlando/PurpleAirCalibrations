@@ -53,7 +53,7 @@ read_purpleair <- function(file_path) {
   return(data)
 }
 
-# file_path <- "./data/CorruptFiles/20180518_EC_FA_BC_B_B1_9D.csv"
+# file_path <- "./data/PurpleAirSD/20180603_2C_3A_E8_34_FF_CB.csv"
 read_purpleairSD <- function(file_path) {
   data <- read.csv(file_path, stringsAsFactors = FALSE)
   data$UTCDateTime <- as.POSIXct(data$UTCDateTime
@@ -152,6 +152,9 @@ dtrak <- ldply(dtrak_files, read_dtrak)
 
 # applying our generic read function to the SD files
 purpleairSD <- ldply(purpleairSD_files, read_purpleairSD) # warning message is being handled within the new read function
+
+#test <- read_purpleairSD("./data/PurpleAirSD/20180603_2C_3A_E8_34_FF_CB.csv")
+
 
 sd_sub <- select(purpleairSD, -c(
                                  firmware_ver
@@ -321,11 +324,11 @@ head(unique(df$datetime))
 tail(unique(df$datetime))
 
 # for testing purposes:
-# sensor <- "68_c6_3a_8e_5b_a9_SD_A"
+# sensor <- "68_c6_3a_8e_57_8e_SD_A"
 # sensor <- "DustTrak"
-# pollutant <- "pm1_0_cf_1"
-# start_time <- "2018-05-21 16:24"
-# end_time <- "2018-05-21 19:45"
+# pollutant <- "pm1_0_atm"
+# start_time <- "2018-05-30 19:20"
+# end_time <- "2018-05-30 23:00"
 
 
 # list of start times from log books
@@ -343,6 +346,7 @@ start_times <- c("2018-05-18 14:00"
                  ,"2018-06-02 17:30"
                  ,"2018-06-02 23:05"
                  )
+
 # list of end times from log books
 end_times <- c("2018-05-18 19:45"
                ,"2018-05-21 19:45"
@@ -446,7 +450,8 @@ for (time in 1:nrow(sample_period)) {
         next
       }
       
-      df_mod <- subset(test_pollutant, DustTrak <= upper_limit & DustTrak >= lower_limit)
+      df_mod <- subset(test_pollutant, DustTrak <= upper_limit & DustTrak >= lower_limit) %>%
+        na.omit() # necessary to handle lm() exceptions!
       
       if (nrow(df_mod) <= 0) {
         print(paste("Obj. 'df_mod' is null"))
@@ -490,7 +495,7 @@ for (time in 1:nrow(sample_period)) {
     ## try({
       
       print(paste("trying", start_time, end_time, sensor, species))
-      mod <- lm(value~DustTrak, data = df_mod)
+      mod <- lm(value~DustTrak, data = df_mod) # avoid 0 non-NA error break
       r_squared <- signif(summary(mod)$r.squared, 4)
       slope <- signif(mod$coefficients[[2]], 2)
       intercept <- signif(mod$coefficients[[1]], 2)
@@ -615,9 +620,19 @@ for (id in unique(top$sensor)) {
 
 top %>% 
   select(-c(start_time, end_time, n_relative)) %>%
+  filter(n_observation >= 75) %>% # remove small/short but significant tests
   group_by(sensor, pollutant) %>%
-  summarise_all(funs(mean)) %>%
-  arrange(sensor, pollutant) -> top_sensors
+  summarise_all(funs(mean, n())) %>% # add count(n) for n_trials that constitutes each average 
+  arrange(sensor, pollutant) %>%
+  select(-c(r_squared_n, slope_n, intercept_n, p_value_n)) -> top_sensors
+
+# removing mean/n suffix from colnames
+names(top_sensors)[names(top_sensors) == "n_observation_n"] <- "n_trials"
+names(top_sensors)[names(top_sensors) == "n_observation_mean"] <- "n_observation"
+names(top_sensors)[names(top_sensors) == "r_squared_mean"] <- "r_squared"
+names(top_sensors)[names(top_sensors) == "slope_mean"] <- "slope"
+names(top_sensors)[names(top_sensors) == "intercept_mean"] <- "intercept"
+names(top_sensors)[names(top_sensors) == "p_value_mean"] <- "p_value"
 
 # round before saving (for printing on 1-page)
 top_sensors$n_observation <- round(top_sensors$n_observation, digits = 2)
@@ -625,8 +640,6 @@ top_sensors$r_squared <- round(top_sensors$r_squared, digits = 4)
 top_sensors$slope <- round(top_sensors$slope, digits = 2)
 top_sensors$intercept <- round(top_sensors$intercept, digits = 2)
 top_sensors$p_value <- round(top_sensors$p_value, digits = 4)
-
-
 
 write.csv(top_sensors, "./data/Output/top_sensors.csv", row.names = FALSE)
 
