@@ -479,11 +479,11 @@ for (time in 1:nrow(sample_period)) {
       n_dtrak <- df_mod$DustTrak %>% na.omit() %>% length()
       n_relative <- n_value/n_dtrak
       
-      # skip lm() if less than 75 minutes worth of data?
-      if (n_value < 100) {
-        print(paste("Only", n_value, "observations for", df_mod$sensor_id[1]))
-        next
-      }
+      # skip lm() if less than 75 minutes worth of data? # see top_sensors output
+      # if (n_value < 100) {
+      #   print(paste("Only", n_value, "observations for", df_mod$sensor_id[1]))
+      #   next
+      # }
       
       
       # define our regression plotting function
