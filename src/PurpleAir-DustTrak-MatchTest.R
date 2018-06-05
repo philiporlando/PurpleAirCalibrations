@@ -593,6 +593,8 @@ for (time in 1:nrow(sample_period)) {
   }
   
   
+  gc()
+  
 } 
 
 # read in output table
