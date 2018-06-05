@@ -306,7 +306,7 @@ pm_tidy <- bind_rows(sd_tidy, dtrak_tidy)
 #pm_tidy$datetime <- as.POSIXct(pm_tidy$datetime)
 
 
-write.csv(pm_tidy, paste0("./data/Tidy/", format(Sys.time(), "%Y-%m-%d"), "_pm_tidy.csv"), row.names = FALSE)
+write.csv(pm_tidy, paste0("./data/Tidy/pm_tidy.csv"), row.names = FALSE, append = FALSE)
 
 dtrak_ref <- select(dtrak_tidy, c(datetime, pollutant, value))
 names(dtrak_ref) <- c("datetime", "pollutant", "DustTrak")
