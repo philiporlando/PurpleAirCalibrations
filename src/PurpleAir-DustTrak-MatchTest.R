@@ -420,6 +420,12 @@ for (time in 1:nrow(sample_period)) {
   # iterate through each sensor 
   for(sensor in unique(df$sensor_id)) {
     
+    if (sensor == "DustTrak") {
+      print("Skipping DustTrak vs. DustTrak")
+      next
+    }
+    
+    
     if (is.null(sensor)) {
       print(paste("Obj. 'sensor' is null", sensor))
       next
@@ -432,6 +438,7 @@ for (time in 1:nrow(sample_period)) {
       # add file log for missing results, doublecheck with raw data
       next
     }
+    
     
     # iterate through each pollutant
     for(species in unique(test_sensor$pollutant)) {
