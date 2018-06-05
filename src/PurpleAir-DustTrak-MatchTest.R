@@ -592,7 +592,7 @@ for (time in 1:nrow(sample_period)) {
     
   }
   
-  
+  ## cleaning up
   gc()
   
 } 
