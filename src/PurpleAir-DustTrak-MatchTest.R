@@ -306,7 +306,7 @@ pm_tidy <- bind_rows(sd_tidy, dtrak_tidy)
 #pm_tidy$datetime <- as.POSIXct(pm_tidy$datetime)
 
 
-write.csv(pm_tidy, paste0("./data/Tidy/pm_tidy.csv"), row.names = FALSE, append = FALSE)
+#write.csv(pm_tidy, paste0("./data/Tidy/pm_tidy.csv"), row.names = FALSE, append = FALSE)
 
 dtrak_ref <- select(dtrak_tidy, c(datetime, pollutant, value))
 names(dtrak_ref) <- c("datetime", "pollutant", "DustTrak")
@@ -351,6 +351,9 @@ start_times <- c("2018-05-18 14:00"
                  ,"2018-06-04 17:00"
                  ,"2018-06-04 19:45"
                  ,"2018-06-05 00:30"
+                 ,"2018-06-05 09:45"
+                 ,"2018-06-05 13:20"
+                 ,"2018-06-05 17:50"
                  )
 
 # list of end times from log books
@@ -373,6 +376,9 @@ end_times <- c("2018-05-18 19:45"
                ,"2018-06-04 19:33"
                ,"2018-06-05 00:15"
                ,"2018-06-05 06:30"
+               ,"2018-06-05 13:15"
+               ,"2018-06-05 17:40"
+               ,"2018-06-05 23:15"
                )
 
 # concat start and end times into single dataframe for looping
@@ -635,7 +641,8 @@ write.csv(top, paste0(dirname(txt_path), "/", sort_name, "Sorted.txt"), row.name
 for (id in unique(top$sensor)) {
   
   out <- filter(top, sensor == id)
-  out %>% arrange(start_time, sensor, pollutant, desc(r_squared), desc(slope)) -> out
+  out %>% arrange(start_time, sensor, pollutant
+                  , desc(r_squared), desc(slope)) -> out
   write.csv(out
             ,file = paste0("./data/Output/", id, ".csv")
             ,row.names = FALSE
